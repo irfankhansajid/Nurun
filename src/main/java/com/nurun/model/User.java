@@ -1,5 +1,6 @@
 package com.nurun.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
@@ -30,6 +31,7 @@ public class User {
     private String email;
 
     @Column(nullable = true)
+    @JsonIgnore
     private String password;
 
     private String avatarUrl;
