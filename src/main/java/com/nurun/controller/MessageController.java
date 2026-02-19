@@ -1,4 +1,4 @@
-package com.nurun;
+package com.nurun.controller;
 
 import com.nurun.dto.MessageRequestDto;
 import com.nurun.dto.MessageResponseDto;

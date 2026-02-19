@@ -1,17 +1,15 @@
 package com.nurun.service;
 
-import com.nurun.dto.MessageRequestDto;
 import com.nurun.dto.MessageResponseDto;
+import com.nurun.exception.ResourceNotFoundException;
 import com.nurun.model.Conversation;
 import com.nurun.model.Message;
 import com.nurun.model.MessageRole;
-import com.nurun.model.User;
 import com.nurun.repository.ConversationRepository;
 import com.nurun.repository.MessageRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Objects;
 
 @Service
 public class MessageService {
@@ -26,7 +24,7 @@ public class MessageService {
 
     public MessageResponseDto createMessage(String content, Long conversationId) {
         Conversation conversation = conversationRepository.findById(conversationId)
-                .orElseThrow(() -> new RuntimeException("Conversation not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Conversation not found"));
             Message createMessage = new Message();
 
             createMessage.setContent(content);
@@ -46,7 +44,7 @@ public class MessageService {
 
     public List<MessageResponseDto> getMessage(Long conversationId) {
         Conversation conversation = conversationRepository.findById(conversationId)
-                .orElseThrow(() -> new RuntimeException("Conversation not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Conversation not found"));
 
         List<Message> messageList = messageRepository.findAllByConversationIdOrderBySentAtAsc(conversationId);
 
