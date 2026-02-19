@@ -16,10 +16,12 @@ public class MessageService {
 
     private final MessageRepository messageRepository;
     private final ConversationRepository conversationRepository;
+    private final AiClient aiClient;
 
-    public MessageService(MessageRepository messageRepository, ConversationRepository conversationRepository) {
+    public MessageService(MessageRepository messageRepository, ConversationRepository conversationRepository, AiClient aiClient) {
         this.messageRepository = messageRepository;
         this.conversationRepository = conversationRepository;
+        this.aiClient = aiClient;
     }
 
     public MessageResponseDto createMessage(String content, Long conversationId) {
@@ -40,6 +42,28 @@ public class MessageService {
                     .messageRole(savedMessage.getMessageRole())
                     .sentAt(savedMessage.getSentAt())
                     .build();
+    }
+
+    private String buildChatContext(Long conversationId) {
+        List<Message> messages = messageRepository.findAllByConversationIdOrderBySentAtAsc(conversationId);
+        StringBuilder context = new StringBuilder();
+        for (Message msg: messages) {
+            String role = msg.getMessageRole() == MessageRole.USER ? "USER" : "AI";
+            context.append("[").append(role).append("]: ").append(msg.getContent()).append("\n");
+        }
+        return context.toString();
+    }
+
+    public MessageResponseDto sendMessageWithAi(String content, Long conversationId) {
+        MessageResponseDto saveUserMessage = createMessage(content, conversationId);
+
+        String chatContext = buildChatContext(conversationId);
+
+        String aiTextResponse = aiClient.generateResponse(chatContext);
+
+        MessageResponseDto aiMessage = createMessage(aiTextResponse, conversationId);
+
+        return aiMessage;
     }
 
     public List<MessageResponseDto> getMessage(Long conversationId) {

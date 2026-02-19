@@ -20,7 +20,7 @@ public class MessageController {
 
     @PostMapping("/message")
     public ResponseEntity<MessageResponseDto> sendMessage(@RequestBody MessageRequestDto requestDto) {
-        return ResponseEntity.ok(messageService.createMessage(requestDto.getContent(), requestDto.getConversationId()));
+        return ResponseEntity.ok(messageService.sendMessageWithAi(requestDto.getContent(), requestDto.getConversationId()));
     }
 
     @GetMapping("/conversation/{id}/messages")
