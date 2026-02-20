@@ -24,14 +24,13 @@ public class MessageService {
         this.aiClient = aiClient;
     }
 
-    public MessageResponseDto createMessage(String content, Long conversationId) {
-        Conversation conversation = conversationRepository.findById(conversationId)
-                .orElseThrow(() -> new ResourceNotFoundException("Conversation not found"));
+    public MessageResponseDto createMessage(String content, Conversation conversation, MessageRole role) {
+
             Message createMessage = new Message();
 
             createMessage.setContent(content);
 
-            createMessage.setMessageRole(MessageRole.USER);
+            createMessage.setMessageRole(role);
             createMessage.setConversation(conversation);
 
             Message savedMessage = messageRepository.save(createMessage);
@@ -54,21 +53,35 @@ public class MessageService {
         return context.toString();
     }
 
-    public MessageResponseDto sendMessageWithAi(String content, Long conversationId) {
-        MessageResponseDto saveUserMessage = createMessage(content, conversationId);
+    public MessageResponseDto sendMessageWithAi(String content, Long conversationId, Long userId) {
+        Conversation conversation = conversationRepository.findById(conversationId).orElseThrow(
+                () -> new ResourceNotFoundException("Conversation not found"));
+
+        if (!conversation.getUser().getId().equals(userId)) {
+            throw new RuntimeException("Conversation not found");
+        }
+        MessageResponseDto saveUserMessage = createMessage(content, conversation, MessageRole.USER);
 
         String chatContext = buildChatContext(conversationId);
 
-        String aiTextResponse = aiClient.generateResponse(chatContext);
+        try {
+            String aiTextResponse = aiClient.generateResponse(chatContext);
+            MessageResponseDto aiMessage = createMessage(aiTextResponse, conversation, MessageRole.ASSISTANT);
+            return aiMessage;
+        } catch (Exception ex) {
+            throw new RuntimeException("Ai service is unavailable");
+        }
 
-        MessageResponseDto aiMessage = createMessage(aiTextResponse, conversationId);
 
-        return aiMessage;
     }
 
-    public List<MessageResponseDto> getMessage(Long conversationId) {
+    public List<MessageResponseDto> getMessage(Long conversationId, Long userId) {
         Conversation conversation = conversationRepository.findById(conversationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Conversation not found"));
+
+        if (!conversation.getUser().getId().equals(userId)) {
+            throw new RuntimeException("Conversation not found");
+        }
 
         List<Message> messageList = messageRepository.findAllByConversationIdOrderBySentAtAsc(conversationId);
 

@@ -19,12 +19,13 @@ public class MessageController {
     }
 
     @PostMapping("/message")
-    public ResponseEntity<MessageResponseDto> sendMessage(@RequestBody MessageRequestDto requestDto) {
-        return ResponseEntity.ok(messageService.sendMessageWithAi(requestDto.getContent(), requestDto.getConversationId()));
+    public ResponseEntity<MessageResponseDto> sendMessage(@RequestBody MessageRequestDto requestDto, Long userId) {
+        return ResponseEntity.ok(messageService.sendMessageWithAi(requestDto.getContent(), requestDto.getConversationId(), userId));
     }
 
     @GetMapping("/conversation/{id}/messages")
     public ResponseEntity<List<MessageResponseDto>> getAllMessages(@PathVariable("id") Long conversationId) {
-        return ResponseEntity.ok(messageService.getMessage(conversationId));
+        Long currentUserId = 1L;
+        return ResponseEntity.ok(messageService.getMessage(conversationId, currentUserId));
     }
 }
