@@ -18,7 +18,7 @@ import java.util.List;
 @NoArgsConstructor
 @Entity
 @EntityListeners(AuditingEntityListener.class)
-@Table(name = "conversation")
+@Table(name = "conversations")
 public class Conversation {
 
     @Id

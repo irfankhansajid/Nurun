@@ -19,7 +19,7 @@ public class MessageController {
     }
 
     @PostMapping("/message")
-    public ResponseEntity<MessageResponseDto> sendMessage(@RequestBody MessageRequestDto requestDto, Long userId) {
+    public ResponseEntity<MessageResponseDto> sendMessage(@RequestBody MessageRequestDto requestDto, @RequestParam Long userId) {
         return ResponseEntity.ok(messageService.sendMessageWithAi(requestDto.getContent(), requestDto.getConversationId(), userId));
     }
 
