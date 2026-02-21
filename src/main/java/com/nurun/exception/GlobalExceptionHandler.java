@@ -19,6 +19,14 @@ public class GlobalExceptionHandler {
                 .body(buildErrorMap(ex.getMessage(), status));
     }
 
+    @ExceptionHandler(AlreadyExistsException.class)
+    public ResponseEntity<Map<String, Object>> handleAlreadyExists(AlreadyExistsException ex) {
+        HttpStatus status = HttpStatus.BAD_REQUEST;
+        return ResponseEntity.status(status)
+                .body(buildErrorMap(ex.getMessage(), status));
+    }
+
+
     private Map<String, Object> buildErrorMap(String message, HttpStatus status) {
         Map<String, Object> errorBody = new HashMap<>();
         errorBody.put("timestamp", Instant.now());
