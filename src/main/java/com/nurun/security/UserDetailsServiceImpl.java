@@ -1,6 +1,6 @@
 package com.nurun.security;
 
-import com.nurun.model.User;
+
 import com.nurun.repository.UserRepository;
 
 
