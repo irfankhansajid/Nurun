@@ -21,7 +21,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(AlreadyExistsException.class)
     public ResponseEntity<Map<String, Object>> handleAlreadyExists(AlreadyExistsException ex) {
-        HttpStatus status = HttpStatus.BAD_REQUEST;
+        HttpStatus status = HttpStatus.CONFLICT;
         return ResponseEntity.status(status)
                 .body(buildErrorMap(ex.getMessage(), status));
     }

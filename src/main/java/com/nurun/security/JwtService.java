@@ -28,12 +28,12 @@ public class JwtService {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateToken(String username) {
+    public String generateToken(Long userId) {
 
         Instant now = Instant.now();
         Instant expiry = now.plusMillis(jwtExpiration);
         return Jwts.builder()
-                .subject(username)
+                .subject(String.valueOf(userId))
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiry))
                 .signWith(getSigningKey())
@@ -41,13 +41,15 @@ public class JwtService {
     }
 
 
-    public String extractUsername(String token) {
-        return extractClaim(token, Claims::getSubject);
+    public Long extractUserId(String token) {
+        return Long.parseLong(
+                extractClaim(token, Claims::getSubject)
+        );
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
-        final String extractUsername = extractUsername(token);
-        return (extractUsername.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        Long userId = extractUserId(token);
+        return String.valueOf(userId).equals(userDetails.getUsername()) && !isTokenExpired(token);
     }
 
     private boolean isTokenExpired(String token) {
