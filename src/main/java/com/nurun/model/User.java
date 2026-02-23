@@ -31,7 +31,7 @@ public class User {
 
     private String displayName; // from provider or local
 
-    @Column( nullable = false)
+    @Column(unique = true, nullable = false)
     private String email;
 
     @Column(nullable = true)
