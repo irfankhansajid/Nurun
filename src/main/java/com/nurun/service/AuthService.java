@@ -10,6 +10,7 @@ import com.nurun.repository.UserRepository;
 import com.nurun.security.JwtService;
 
 import com.nurun.security.UserPrincipal;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -41,27 +42,31 @@ public class AuthService {
             throw new AlreadyExistsException("User already exists");
         }
 
-        User user = new User();
-        user.setEmail(registerRequestDto.getEmail());
-        user.setPassword(passwordEncoder.encode(registerRequestDto.getPassword()));
-        user.setCreatedAt(Instant.now());
+        try {
+            User user = new User();
+            user.setEmail(registerRequestDto.getEmail());
+            user.setPassword(passwordEncoder.encode(registerRequestDto.getPassword()));
+            user.setCreatedAt(Instant.now());
 
-        String defaultName = registerRequestDto.getEmail().split("@")[0];
-        user.setDisplayName(defaultName);
+            String defaultName = registerRequestDto.getEmail().split("@")[0];
+            user.setDisplayName(defaultName);
 
-        User savedUser = userRepository.save(user);
+            User savedUser = userRepository.save(user);
 
-        UserPrincipal userPrincipal = new UserPrincipal(savedUser);
+            UserPrincipal userPrincipal = new UserPrincipal(savedUser);
 
-        String token = jwtService.generateToken(userPrincipal.getId());
+            String token = jwtService.generateToken(userPrincipal.getId());
 
-        return RegisterResponseDto.builder()
-                .email(savedUser.getEmail())
-                .token(token)
-                .displayName(savedUser.getDisplayName())
-                .avatarUrl(savedUser.getAvatarUrl())
-                .createdAt(savedUser.getCreatedAt())
-                .build();
+            return RegisterResponseDto.builder()
+                    .email(savedUser.getEmail())
+                    .token(token)
+                    .displayName(savedUser.getDisplayName())
+                    .avatarUrl(savedUser.getAvatarUrl())
+                    .createdAt(savedUser.getCreatedAt())
+                    .build();
+        } catch (DataIntegrityViolationException ex) {
+            throw new AlreadyExistsException("Email Already exists");
+        }
     }
 
     public LoginResponseDto login(LoginRequestDto loginRequestDto) {
