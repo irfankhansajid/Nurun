@@ -12,14 +12,13 @@ public class UserPrincipal implements UserDetails {
     private final Long id;
     private final String email;
     private final String password;
-    private final User user;
+
     private final Collection<? extends GrantedAuthority> authorities;
 
     public UserPrincipal(User user) {
         this.id = user.getId();
         this.email = user.getEmail();
         this.password = user.getPassword();
-        this.user = user;
         this.authorities = List.of();
     }
 
@@ -27,9 +26,6 @@ public class UserPrincipal implements UserDetails {
         return id;
     }
 
-    public User getUser() {
-        return user;
-    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -38,7 +34,7 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public String getUsername() {
-        return email;
+        return String.valueOf(id);
     }
 
     @Override

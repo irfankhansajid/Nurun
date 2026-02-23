@@ -1,10 +1,10 @@
 package com.nurun.service;
 
-import com.nurun.dto.AuthResponseDto;
+import com.nurun.dto.LoginResponseDto;
+import com.nurun.dto.RegisterResponseDto;
 import com.nurun.dto.LoginRequestDto;
 import com.nurun.dto.RegisterRequestDto;
 import com.nurun.exception.AlreadyExistsException;
-import com.nurun.exception.ResourceNotFoundException;
 import com.nurun.model.User;
 import com.nurun.repository.UserRepository;
 import com.nurun.security.JwtService;
@@ -35,10 +35,10 @@ public class AuthService {
     }
 
 
-    public AuthResponseDto register(RegisterRequestDto registerRequestDto) throws AlreadyExistsException {
+    public RegisterResponseDto register(RegisterRequestDto registerRequestDto) {
 
         if (userRepository.existsByEmail(registerRequestDto.getEmail())) {
-            throw new AlreadyExistsException("User already exist");
+            throw new AlreadyExistsException("User already exists");
         }
 
         User user = new User();
@@ -53,9 +53,9 @@ public class AuthService {
 
         UserPrincipal userPrincipal = new UserPrincipal(savedUser);
 
-        String token = jwtService.generateToken(userPrincipal.getUsername());
+        String token = jwtService.generateToken(userPrincipal.getId());
 
-        return AuthResponseDto.builder()
+        return RegisterResponseDto.builder()
                 .email(savedUser.getEmail())
                 .token(token)
                 .displayName(savedUser.getDisplayName())
@@ -64,7 +64,7 @@ public class AuthService {
                 .build();
     }
 
-    public AuthResponseDto login(LoginRequestDto loginRequestDto) {
+    public LoginResponseDto login(LoginRequestDto loginRequestDto) {
 
         var authentication = authenticationManager.authenticate(
 
@@ -76,16 +76,12 @@ public class AuthService {
 
         UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
 
-        User user = userPrincipal.getUser();
 
-        String token = jwtService.generateToken(user.getEmail());
+        String token = jwtService.generateToken(userPrincipal.getId());
 
-        return AuthResponseDto.builder()
-                .email(user.getEmail())
+        return LoginResponseDto.builder()
+                .email(userPrincipal.getUsername())
                 .token(token)
-                .displayName(user.getDisplayName())
-                .avatarUrl(user.getAvatarUrl())
-                .createdAt(user.getCreatedAt())
                 .build();
     }
 

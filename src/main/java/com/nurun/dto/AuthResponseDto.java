@@ -9,7 +9,7 @@ import java.time.Instant;
 @Getter
 @AllArgsConstructor
 @Builder
-public class AuthResponseDto {
+public class RegisterResponseDto {
 
 
     private String email;
