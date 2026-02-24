@@ -23,16 +23,17 @@ public class Message {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
     @CreatedDate
     private Instant sentAt;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "conversation_id", nullable = false)
-    private Conversation conversation;
+    @JoinColumn(name = "user_id", nullable = false)
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    private User user;
 
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private MessageRole messageRole;
 
