@@ -29,9 +29,9 @@ public class Message {
     @CreatedDate
     private Instant sentAt;
 
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "conversation_id", nullable = false)
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    private User user;
+    private Conversation conversation;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)

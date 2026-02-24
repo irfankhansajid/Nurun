@@ -43,8 +43,6 @@ public class User {
     @Enumerated(EnumType.STRING)
     private AuthProvider authProvider;
 
-    @OneToMany(mappedBy = "user")
-    private List<Message> message;
 
     @CreatedDate
     private Instant createdAt;
@@ -52,5 +50,8 @@ public class User {
     @LastModifiedDate
     private Instant updatedAt;
 
+
+    @OneToMany(mappedBy = "user")
+    private List<Conversation> conversations;
 
 }
