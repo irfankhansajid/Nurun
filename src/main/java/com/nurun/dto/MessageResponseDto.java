@@ -16,8 +16,8 @@ public class MessageResponseDto {
 
     private Long id;
     private String content;
-    private Long conversationId;
     private MessageRole messageRole;
+    private Long userId;
     private Instant sentAt;
 
 }
