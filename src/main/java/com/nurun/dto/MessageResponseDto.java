@@ -1,6 +1,6 @@
 package com.nurun.dto;
 
-import com.nurun.model.MessageRole;
+import com.nurun.enumlist.MessageRole;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,5 +19,7 @@ public class MessageResponseDto {
     private MessageRole messageRole;
     private Long userId;
     private Instant sentAt;
+    private String modelUsed;
+    private String providerUsed;
 
 }

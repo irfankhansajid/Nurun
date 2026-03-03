@@ -36,4 +36,9 @@ public class Conversation {
     @OneToMany(mappedBy = "conversation", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Message> messageList = new ArrayList<>();
 
+    public void addMessage(Message message) {
+        messageList.add(message);
+        message.setConversation(this);
+    }
+
 }
