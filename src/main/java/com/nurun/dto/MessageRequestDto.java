@@ -13,8 +13,6 @@ import lombok.Setter;
 @NoArgsConstructor
 public class MessageRequestDto {
 
-    private Long conversationId;
-
     @NotBlank
     private String content;
 

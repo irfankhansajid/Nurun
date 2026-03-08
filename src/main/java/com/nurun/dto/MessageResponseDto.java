@@ -21,5 +21,6 @@ public class MessageResponseDto {
     private Instant sentAt;
     private String modelUsed;
     private String providerUsed;
+    private Long conversationId;
 
 }

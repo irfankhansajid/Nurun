@@ -27,9 +27,15 @@ public class Message {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
-    @CreatedDate
     @Column(nullable = false, updatable = false)
     private Instant sentAt;
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.sentAt == null) {
+            this.sentAt = Instant.now();
+        }
+    }
 
     @JoinColumn(name = "conversation_id", nullable = false)
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
