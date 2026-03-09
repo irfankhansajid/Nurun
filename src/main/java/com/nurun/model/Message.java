@@ -1,5 +1,6 @@
 package com.nurun.model;
 
+import com.nurun.enumlist.MessageRole;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -26,16 +27,27 @@ public class Message {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content;
 
-    @CreatedDate
+    @Column(nullable = false, updatable = false)
     private Instant sentAt;
 
-    @JoinColumn(name = "user_id", nullable = false)
+    @PrePersist
+    protected void onCreate() {
+        if (this.sentAt == null) {
+            this.sentAt = Instant.now();
+        }
+    }
+
+    @JoinColumn(name = "conversation_id", nullable = false)
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
-    private User user;
+    private Conversation conversation;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private MessageRole messageRole;
+
+    private String modelUsed;
+
+    private String providerUsed;
 
 
 }

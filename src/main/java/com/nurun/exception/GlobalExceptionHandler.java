@@ -26,6 +26,36 @@ public class GlobalExceptionHandler {
                 .body(buildErrorMap(ex.getMessage(), status));
     }
 
+    @ExceptionHandler(RateLimitException.class)
+    public ResponseEntity<Map<String, Object>> handleRateLimit(RateLimitException ex) {
+        HttpStatus status = HttpStatus.TOO_MANY_REQUESTS;
+        return ResponseEntity.status(status)
+                .body(buildErrorMap(ex.getMessage(), status));
+    }
+
+    @ExceptionHandler(AllProvidersFailedException.class)
+    public ResponseEntity<Map<String, Object>> handleAllProviderFailed(AllProvidersFailedException ex) {
+        HttpStatus status = HttpStatus.TOO_MANY_REQUESTS;
+        return ResponseEntity.status(status)
+                .body(buildErrorMap(ex.getMessage(), status));
+    }
+
+    @ExceptionHandler(ModelNotSupportedException.class)
+    public ResponseEntity<Map<String, Object>> handleModelNotSupport(ModelNotSupportedException ex) {
+        HttpStatus status = HttpStatus.UNSUPPORTED_MEDIA_TYPE;
+        return ResponseEntity.status(status)
+                .body(buildErrorMap(ex.getMessage(), status));
+    }
+
+    @ExceptionHandler(ModelUnavailableException.class)
+    public ResponseEntity<Map<String, Object>> handleModelUnavailable(ModelUnavailableException ex) {
+        HttpStatus status = HttpStatus.SERVICE_UNAVAILABLE;
+        return ResponseEntity.status(status)
+                .body(buildErrorMap(ex.getMessage(), status));
+    }
+
+
+
 
     private Map<String, Object> buildErrorMap(String message, HttpStatus status) {
         Map<String, Object> errorBody = new HashMap<>();

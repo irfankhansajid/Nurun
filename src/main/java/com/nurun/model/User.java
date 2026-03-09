@@ -1,16 +1,14 @@
 package com.nurun.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.nurun.enumlist.AuthProvider;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.Instant;
-import java.util.Collection;
 import java.util.List;
 
 @Entity
@@ -43,8 +41,6 @@ public class User {
     @Enumerated(EnumType.STRING)
     private AuthProvider authProvider;
 
-    @OneToMany(mappedBy = "user")
-    private List<Message> message;
 
     @CreatedDate
     private Instant createdAt;
@@ -52,5 +48,8 @@ public class User {
     @LastModifiedDate
     private Instant updatedAt;
 
+
+    @OneToMany(mappedBy = "user")
+    private List<Conversation> conversations;
 
 }
