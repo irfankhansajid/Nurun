@@ -35,3 +35,4 @@ build/
 /Frontend_NURUN/node_modules/
 /Frontend_NURUN/.vite/
 /src/main/resources/application-prod.properties
+/Frontend_NURUN/node_modules/
