@@ -52,12 +52,15 @@ public class MessageService {
         // lazy identity mapping
         User user = userRepository.getReferenceById(userId);
 
+        String content = messageRequestDto.getContent();
+        String title = content.length() > 50 ? content.substring(0, 50) + "..." : content;
+
         Conversation conversation;
         if (conversationIdFromUrl == null) {
 
             conversation = new Conversation();
             conversation.setUser(user);
-            conversation.setTitle("Chat " + Instant.now());
+            conversation.setTitle(title);
 
 
         } else {
