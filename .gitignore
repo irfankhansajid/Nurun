@@ -36,3 +36,5 @@ build/
 /Frontend_NURUN/.vite/
 /src/main/resources/application-prod.properties
 /Frontend_NURUN/node_modules/
+/deploy_backend.sh
+/deploy_frontend.sh
