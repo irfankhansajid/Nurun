@@ -9,6 +9,7 @@ import com.nurun.model.Message;
 import com.nurun.model.User;
 import com.nurun.record.ConversationUpdatedEvent;
 import com.nurun.repository.ConversationRepository;
+import com.nurun.repository.MessageRepository;
 import com.nurun.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.context.ApplicationEventPublisher;
@@ -22,11 +23,13 @@ public class ConversationPersistenceService {
     private final UserRepository userRepository;
     private final ConversationRepository conversationRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final MessageRepository messageRepository;
 
-    public ConversationPersistenceService(UserRepository userRepository, ConversationRepository conversationRepository, ApplicationEventPublisher eventPublisher) {
+    public ConversationPersistenceService(UserRepository userRepository, ConversationRepository conversationRepository, ApplicationEventPublisher eventPublisher, MessageRepository messageRepository) {
         this.userRepository = userRepository;
         this.conversationRepository = conversationRepository;
         this.eventPublisher = eventPublisher;
+        this.messageRepository = messageRepository;
     }
 
     @Transactional
@@ -77,13 +80,15 @@ public class ConversationPersistenceService {
 
         conversation.addMessage(aiMessage);
 
-        Conversation savedConversation = conversationRepository.saveAndFlush(conversation);
+        Message savedMessage = conversationRepository.save(conversation).getMessageList().get(conversation.getMessageList().size() - 1);
 
-        if (savedConversation.getMessageList().size() > 10 && savedConversation.getMessageList().size() % 5 == 0) {
+        long totalMessages = messageRepository.countByConversationId(conversationId);
+
+        if (totalMessages > 10 && totalMessages % 5 == 0) {
             eventPublisher.publishEvent(new ConversationUpdatedEvent(conversationId));
         }
 
-        return savedConversation.getMessageList().get(savedConversation.getMessageList().size() - 1);
+        return savedMessage;
 
     }
 

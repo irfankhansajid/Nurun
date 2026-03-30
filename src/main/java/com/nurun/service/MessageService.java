@@ -7,12 +7,13 @@ import com.nurun.dto.MessageResponseDto;
 import com.nurun.enumlist.SelectionMode;
 import com.nurun.model.Conversation;
 import com.nurun.model.Message;
+import com.nurun.repository.MessageRepository;
 import com.nurun.router.AiRouter;
 import com.nurun.security.UserPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -23,9 +24,12 @@ public class MessageService {
 
     private final AiRouter aiRouter;
 
-    public MessageService(ConversationPersistenceService conversationPersistenceService, AiRouter aiRouter) {
+    private  final MessageRepository messageRepository;
+
+    public MessageService(ConversationPersistenceService conversationPersistenceService, AiRouter aiRouter, MessageRepository messageRepository) {
         this.conversationPersistenceService = conversationPersistenceService;
         this.aiRouter = aiRouter;
+        this.messageRepository = messageRepository;
     }
 
     private Long getCurrentUserId() {
@@ -56,18 +60,18 @@ public class MessageService {
 
         Conversation conversation = conversationPersistenceService.saveUserMessage(messageRequestDto, conversationIdFromUrl, userId);
 
-        List<Message> allMessages = conversation.getMessageList();
+        List<Message> recentMessages = messageRepository.findTop15ByConversationIdOrderBySentAtDesc(conversation.getId());
 
-        int totalMessage = allMessages.size();
-        int historyStart = Math.max(0, totalMessage - 11);
-        int historyEnd = totalMessage - 1;
+        Collections.reverse(recentMessages);
 
-        List<Message> strictHistory = new ArrayList<>(allMessages.subList(historyStart, historyEnd));
+        Message newlySavedMessage = recentMessages.remove(recentMessages.size()-1);
+
+        List<Message> strictHistory = recentMessages;
 
 
         AiRequest request = new AiRequest();
-        request.setModelName(messageRequestDto.getModelName());
-        request.setNewMessage(messageRequestDto.getContent());
+        request.setModelName("nurun-auto");
+        request.setNewMessage(newlySavedMessage.getContent());
         request.setHistory(strictHistory);
         request.setSummary(conversation.getSummary());
         request.setConversationId(conversation.getId());

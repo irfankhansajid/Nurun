@@ -45,7 +45,8 @@ public class AiRouterService implements AiRouter{
                 String response = provider.generateResponse(
                         request.getHistory(),
                         request.getNewMessage(),
-                        request.getSummary()
+                        request.getSummary(),
+                        request.getModelName()
                 );
 
                 return AiResponse.builder()
@@ -78,7 +79,8 @@ public class AiRouterService implements AiRouter{
                     String aiResponse = currentProvider.generateResponse(
                             request.getHistory(),
                             request.getNewMessage(),
-                            request.getSummary()
+                            request.getSummary(),
+                            request.getModelName()
                     );
 
                     return AiResponse.builder()

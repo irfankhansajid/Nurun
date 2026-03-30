@@ -4,6 +4,7 @@ import com.nurun.enumlist.MessageRole;
 import com.nurun.exception.RateLimitException;
 import com.nurun.model.Message;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
@@ -13,6 +14,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Service
+@Order(1)
 public class GeminiProvider implements AiProvider {
 
     private volatile boolean available = true;
@@ -28,7 +30,9 @@ public class GeminiProvider implements AiProvider {
     private final RestClient restClient = RestClient.create();
 
     @Override
-    public String generateResponse(List<Message> conversationHistory, String newUserMessage, String summary) {
+    public String generateResponse(List<Message> conversationHistory,
+                                   String newUserMessage,
+                                   String summary, String modelName) {
         try {
             String prompt = buildPrompt(conversationHistory, newUserMessage, summary);
 
@@ -110,7 +114,8 @@ public class GeminiProvider implements AiProvider {
             "gemini-3-flash-preview",
             "gemini-2.5-pro",
             "gemini-2.5-flash",
-            "gemini-3.1-flash-lite-preview"
+            "gemini-3.1-flash-lite-preview",
+            "nurun-auto"
     );
 
     @Override

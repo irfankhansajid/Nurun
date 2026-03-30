@@ -7,12 +7,14 @@ import com.nurun.model.Conversation;
 import com.nurun.model.Message;
 import com.nurun.record.ConversationUpdatedEvent;
 import com.nurun.repository.ConversationRepository;
+import com.nurun.repository.MessageRepository;
 import com.nurun.router.AiRouter;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -21,10 +23,12 @@ public class ConversationSummaryWorker {
 
     private final ConversationRepository conversationRepository;
     private final AiRouter aiRouter;
+    private final MessageRepository messageRepository;
 
-    public ConversationSummaryWorker(ConversationRepository conversationRepository, AiRouter aiRouter) {
+    public ConversationSummaryWorker(ConversationRepository conversationRepository, AiRouter aiRouter, MessageRepository messageRepository) {
         this.conversationRepository = conversationRepository;
         this.aiRouter = aiRouter;
+        this.messageRepository = messageRepository;
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -39,23 +43,16 @@ public class ConversationSummaryWorker {
                 Conversation conversation = conversationRepository.findById(conversationId)
                         .orElseThrow(() -> new ResourceNotFoundException("Conversation not found"));
 
-                List<Message> allMessages = conversation.getMessageList();
-                int totalMessage = allMessages.size();
+                List<Message> recent15Messages = messageRepository.findTop15ByConversationIdOrderBySentAtDesc(conversationId);
 
                 // Never run if we have 10 or fewer messages.
-                if (totalMessage <= 10) {
-                    return;
-                }
+                if (recent15Messages.size() <= 10) return;
 
+                Collections.reverse(recent15Messages);
 
-                int startSummaryIndex = Math.max(0, totalMessage - 15);
-                int endSummaryIndex = totalMessage - 10;
+                int messageToSummarize = recent15Messages.size() - 10;
 
-                if (startSummaryIndex >= endSummaryIndex) {
-                    return;
-                }
-
-                List<Message> dropMessages = new ArrayList<>(allMessages.subList(startSummaryIndex, endSummaryIndex));
+                List<Message> dropMessages = new ArrayList<>(recent15Messages.subList(0, messageToSummarize));
 
                 StringBuilder textToSummary = new StringBuilder();
                 if (conversation.getSummary() != null && !conversation.getSummary().isEmpty()) {
