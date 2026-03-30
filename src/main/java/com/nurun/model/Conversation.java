@@ -41,4 +41,6 @@ public class Conversation {
         message.setConversation(this);
     }
 
+    @Column(columnDefinition = "TEXT")
+    private String summary;
 }

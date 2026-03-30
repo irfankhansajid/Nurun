@@ -19,4 +19,6 @@ public class AiRequest {
     private String newMessage;
     private Long conversationId;
     private SelectionMode selectionMode;
+
+    private String summary;
 }

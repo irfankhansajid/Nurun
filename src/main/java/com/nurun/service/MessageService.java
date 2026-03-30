@@ -5,34 +5,26 @@ import com.nurun.dto.AiResponse;
 import com.nurun.dto.MessageRequestDto;
 import com.nurun.dto.MessageResponseDto;
 import com.nurun.enumlist.SelectionMode;
-import com.nurun.exception.ResourceNotFoundException;
 import com.nurun.model.Conversation;
 import com.nurun.model.Message;
-import com.nurun.enumlist.MessageRole;
-import com.nurun.model.User;
-import com.nurun.repository.ConversationRepository;
-import com.nurun.repository.UserRepository;
 import com.nurun.router.AiRouter;
 import com.nurun.security.UserPrincipal;
-import jakarta.transaction.Transactional;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class MessageService {
 
 
-    private final UserRepository userRepository;
-    private final ConversationRepository conversationRepository;
+    private final ConversationPersistenceService conversationPersistenceService;
 
     private final AiRouter aiRouter;
 
-    public MessageService(UserRepository userRepository, ConversationRepository conversationRepository, AiRouter aiRouter) {
-        this.userRepository = userRepository;
-        this.conversationRepository = conversationRepository;
+    public MessageService(ConversationPersistenceService conversationPersistenceService, AiRouter aiRouter) {
+        this.conversationPersistenceService = conversationPersistenceService;
         this.aiRouter = aiRouter;
     }
 
@@ -45,73 +37,61 @@ public class MessageService {
     }
 
 
-    @Transactional
+
     public MessageResponseDto createMessage(MessageRequestDto messageRequestDto, Long conversationIdFromUrl) {
 
         Long userId = getCurrentUserId();
         // lazy identity mapping
-        User user = userRepository.getReferenceById(userId);
 
         String content = messageRequestDto.getContent();
-        String title = content.length() > 50 ? content.substring(0, 50) + "..." : content;
 
-        Conversation conversation;
-        if (conversationIdFromUrl == null) {
+        if (content == null || content.trim().isEmpty()) {
+            throw new IllegalArgumentException("Message cannot be empty");
+        }
 
-            conversation = new Conversation();
-            conversation.setUser(user);
-            conversation.setTitle(title);
-
-
-        } else {
-            conversation = conversationRepository.findById(conversationIdFromUrl)
-                    .orElseThrow(() -> new ResourceNotFoundException("Conversation not found"));
-
-            if (!userId.equals(conversation.getUser().getId())) {
-                throw new RuntimeException("forbidden access");
-            }
+        if (content.length() > 10000) {
+            throw new IllegalArgumentException("Message is too long. Please keep it under 10,000 characters.");
         }
 
 
+        Conversation conversation = conversationPersistenceService.saveUserMessage(messageRequestDto, conversationIdFromUrl, userId);
 
+        List<Message> allMessages = conversation.getMessageList();
 
+        int totalMessage = allMessages.size();
+        int historyStart = Math.max(0, totalMessage - 11);
+        int historyEnd = totalMessage - 1;
 
-        Message userMessage = new Message();
-        userMessage.setContent(messageRequestDto.getContent());
-        userMessage.setMessageRole(MessageRole.USER);
-
-        List<Message> history = List.copyOf(conversation.getMessageList());
-
-
-        conversation.addMessage(userMessage);
-
-        conversationRepository.save(conversation);
+        List<Message> strictHistory = new ArrayList<>(allMessages.subList(historyStart, historyEnd));
 
 
         AiRequest request = new AiRequest();
         request.setModelName(messageRequestDto.getModelName());
-        request.setNewMessage(userMessage.getContent());
-        request.setHistory(history);
+        request.setNewMessage(messageRequestDto.getContent());
+        request.setHistory(strictHistory);
+        request.setSummary(conversation.getSummary());
         request.setConversationId(conversation.getId());
         request.setSelectionMode(SelectionMode.AUTO_SELECTED);
 
 
+
+        long start = System.currentTimeMillis();
+
         AiResponse aiResponse = aiRouter.generate(request);
 
-        Message aiMessage = new Message();
-        aiMessage.setContent(aiResponse.getContent());
-        aiMessage.setMessageRole(MessageRole.ASSISTANT);
-        aiMessage.setModelUsed(aiResponse.getModelName());
-        aiMessage.setProviderUsed(aiResponse.getProviderName());
-        conversation.addMessage(aiMessage);
 
-        Conversation savedConversation = conversationRepository.saveAndFlush(conversation);
+        long end  = System.currentTimeMillis();
 
-        Message persistMessage = savedConversation.getMessageList().get(savedConversation.getMessageList().size() - 1);
+        System.out.println("Ai call look "+ (end - start) + " ms");
 
-        return mapToResponseDto(persistMessage);
+        Message finalMessage = conversationPersistenceService.saveAiMessage(conversation.getId(), aiResponse);
+
+
+        return mapToResponseDto(finalMessage);
 
     }
+
+
 
     private MessageResponseDto mapToResponseDto(Message message) {
         return MessageResponseDto.builder()

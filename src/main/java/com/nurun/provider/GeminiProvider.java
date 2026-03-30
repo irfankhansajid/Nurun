@@ -1,5 +1,6 @@
 package com.nurun.provider;
 
+import com.nurun.enumlist.MessageRole;
 import com.nurun.exception.RateLimitException;
 import com.nurun.model.Message;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,9 +28,9 @@ public class GeminiProvider implements AiProvider {
     private final RestClient restClient = RestClient.create();
 
     @Override
-    public String generateResponse(List<Message> conversationHistory, String newUserMessage) {
+    public String generateResponse(List<Message> conversationHistory, String newUserMessage, String summary) {
         try {
-            String prompt = buildPrompt(conversationHistory, newUserMessage);
+            String prompt = buildPrompt(conversationHistory, newUserMessage, summary);
 
             return callGemini(prompt);
         } catch (HttpClientErrorException.TooManyRequests e) {
@@ -76,22 +77,25 @@ public class GeminiProvider implements AiProvider {
         return (String) part.get("text");
     }
 
-    private String buildPrompt(List<Message> conversationHistory, String newUserMessage) {
+    private String buildPrompt(List<Message> strictHistory, String newUserMessage, String summary) {
 
         StringBuilder prompt = new StringBuilder();
         prompt.append("System: You are a helpful AI assistant. \n");
 
-        for (Message msg: conversationHistory) {
-            switch (msg.getMessageRole()) {
-                case USER -> prompt.append("User: ");
-                case ASSISTANT -> prompt.append("Assistant: ");
-                case SYSTEM -> prompt.append("System: ");
-            }
+        if (summary != null && !summary.trim().isEmpty()) {
+            prompt.append("System: Here is a summary of the earlier conversation to give you context: [");
+            prompt.append(summary);
+            prompt.append("]\n");
+        }
 
-            prompt.append(msg.getContent()).append("\n");
+        for (Message msg: strictHistory) {
+            String role = (msg.getMessageRole() == MessageRole.USER) ? "USER" : "ASSISTANT";
+            prompt.append(role).append(": ").append(msg.getContent()).append("\n");
         }
         prompt.append("User: ").append(newUserMessage).append("\n");
         prompt.append("Assistant: ");
+
+        System.out.println("Prompt length: " + prompt.length());
 
         return prompt.toString();
     }
