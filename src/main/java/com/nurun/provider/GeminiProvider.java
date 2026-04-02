@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Service
-@Order(1)
+@Order(2)
 public class GeminiProvider implements AiProvider {
 
     private volatile boolean available = true;
@@ -22,27 +22,46 @@ public class GeminiProvider implements AiProvider {
     @Value("${gemini.api-key}")
     private String apiKey;
 
-    @Value("${gemini.url}")
-    private String url;
-
-
 
     private final RestClient restClient = RestClient.create();
+
+    private final List<String> internalWaterfall = List.of(
+            "gemini-3-flash-preview",
+            "gemini-3.1-flash-lite-preview",
+            "gemini-2.5-flash"
+    );
 
     @Override
     public String generateResponse(List<Message> conversationHistory,
                                    String newUserMessage,
                                    String summary, String modelName) {
         try {
+
+            List<String> modelToTry = modelName.equals("nurun-auto") ? internalWaterfall : List.of(modelName);
             String prompt = buildPrompt(conversationHistory, newUserMessage, summary);
 
-            return callGemini(prompt);
+            for (int i = 0; i<modelToTry.size(); i++) {
+                String currentModel = modelToTry.get(i);
+                try {
+                    System.out.println("Gemini model: " + currentModel);
+                    return callGemini(prompt, currentModel);
+                } catch (HttpClientErrorException.TooManyRequests e) {
+                    System.err.println(currentModel + " hit a Rate Limit.");
+                    if (i == modelToTry.size() - 1) throw new RateLimitException("All Gemini models rate limited");
+                } catch (Exception e) {
+                    System.err.println(currentModel + " failed: " + e.getMessage());
+                    if (i == modelToTry.size() - 1) throw new RuntimeException("All Gemini models failed");
+                }
+            }
+            throw new RuntimeException("Gemini completely failed");
+
+
         } catch (HttpClientErrorException.TooManyRequests e) {
             throw new RateLimitException("Gemini rate limit exceeded");
         }
     }
 
-    private String callGemini(String prompt) {
+    private String callGemini(String prompt, String currentModel) {
 
         Map<String, Object> body = Map.of(
                 "contents", List.of(
@@ -54,8 +73,10 @@ public class GeminiProvider implements AiProvider {
                 )
         );
 
+        String dynamicUrl = "https://generativelanguage.googleapis.com/v1beta/models/" + currentModel + ":generateContent?key=" + apiKey;
+
         Map response = restClient.post()
-                .uri(url + "?key=" + apiKey)
+                .uri(dynamicUrl)
                 .body(body)
                 .retrieve()
                 .onStatus(status -> status.value() == 429, ((request, resp) -> {
@@ -132,5 +153,16 @@ public class GeminiProvider implements AiProvider {
     @Override
     public void markUnavailable() {
         this.available = false;
+    }
+
+    @Override
+    public ProviderCapabilities getCapabilities() {
+        return ProviderCapabilities.builder()
+                .providerName("Gemini")
+                .maxTokensPerRequest(1_000_000)
+                .maxTokensPerMinute(1_000_000)
+                .averageLatencyMs(2000)
+                .build();
+
     }
 }

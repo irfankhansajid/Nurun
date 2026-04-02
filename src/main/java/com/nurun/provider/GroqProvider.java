@@ -15,7 +15,8 @@ import java.util.Map;
 import java.util.Set;
 
 @Service
-@Order(2)
+@Order(1)
+
 public class GroqProvider implements AiProvider{
 
 
@@ -29,22 +30,43 @@ public class GroqProvider implements AiProvider{
 
     private final RestClient restClient = RestClient.create();
 
+    private final List<String> internalWaterfall = List.of(
+            "llama-3.1-8b-instant",
+            "llama-3.3-70b-versatile",
+            "mixtral-8x7b-32768"
+    );
+
 
     @Override
     public String generateResponse(List<Message> conversationHistory, String newUserMessage, String summary, String modelName) {
 
-        try {
-            Map<String, Object> requestBody = buildRequestBody(conversationHistory, newUserMessage, summary, modelName);
-            return callGroq(requestBody);
-        } catch (HttpClientErrorException.TooManyRequests e) {
-            throw new RateLimitException("Groq API Limit Exceeded");
+        List<String> modelsToTry = modelName.equals("nurun-auto") ? internalWaterfall : List.of(modelName);
+
+        for (int i = 0; i< modelsToTry.size(); i++) {
+            String currentModel = modelsToTry.get(i);
+            try {
+                System.out.println("Groq trying model: " + currentModel);
+                Map<String, Object> requestBody = buildRequestBody(conversationHistory, newUserMessage, summary, currentModel);
+                return callGroq(requestBody);
+
+            } catch (HttpClientErrorException.TooManyRequests e) {
+
+                System.err.println(currentModel + " hit a Rate Limit.");
+                if (i == modelsToTry.size() - 1) throw new RateLimitException("All Groq models rate limited");
+
+            } catch (Exception e) {
+
+                System.err.println(currentModel + " failed: " + e.getMessage());
+                if (i == modelsToTry.size() - 1) throw new RuntimeException("All Groq models failed");
+            }
         }
+
+        throw new RuntimeException("Groq completely failed");
     }
 
-    private Map<String, Object> buildRequestBody(List<Message> conversationHistory, String newUserMessage, String summary, String modelName) {
+    private Map<String, Object> buildRequestBody(List<Message> conversationHistory, String newUserMessage, String summary, String currentModel) {
         List<Map<String, Object>> messages = new ArrayList<>();
 
-        String actualModel = modelName.equals("nurun-auto") ? "llama-3.1-8b-instant" : modelName;
 
         StringBuilder systemContent = new StringBuilder("You are a helpful AI assistant.\n");
 
@@ -62,7 +84,7 @@ public class GroqProvider implements AiProvider{
         messages.add(Map.of("role", "user", "content", newUserMessage));
 
         return Map.of(
-                "model", actualModel,
+                "model", currentModel,
                 "messages", messages
         );
     }
@@ -107,7 +129,7 @@ public class GroqProvider implements AiProvider{
             "llama-3.3-70b-versatile",    // The massive Llama 3.3
             "mixtral-8x7b-32768",
             "gemma2-9b-it",
-            "openai/gpt-oss-120b",        // The custom one you added
+            "openai/gpt-oss-120b",
             "nurun-auto"
     );
 
@@ -125,5 +147,15 @@ public class GroqProvider implements AiProvider{
     @Override
     public void markUnavailable() {
         this.available = false;
+    }
+
+    @Override
+    public ProviderCapabilities getCapabilities() {
+        return ProviderCapabilities.builder()
+                .providerName("Groq")
+                .maxTokensPerRequest(6000)
+                .maxTokensPerMinute(6000)
+                .averageLatencyMs(800)
+                .build();
     }
 }

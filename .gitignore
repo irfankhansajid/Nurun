@@ -38,3 +38,4 @@ build/
 /Frontend_NURUN/node_modules/
 /deploy_backend.sh
 /deploy_frontend.sh
+/context.md

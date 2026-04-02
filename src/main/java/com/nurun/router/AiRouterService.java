@@ -8,6 +8,7 @@ import com.nurun.exception.ModelNotSupportedException;
 import com.nurun.exception.ModelUnavailableException;
 import com.nurun.exception.RateLimitException;
 import com.nurun.provider.AiProvider;
+import com.nurun.service.TokenCountingService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,14 +17,24 @@ import java.util.List;
 public class AiRouterService implements AiRouter{
 
     private final List<AiProvider> aiProvider;
+    private final TokenCountingService tokenCountingService;
 
-    public AiRouterService(List<AiProvider> aiProvider) {
+    public AiRouterService(List<AiProvider> aiProvider, TokenCountingService tokenCountingService) {
         this.aiProvider = aiProvider;
+        this.tokenCountingService = tokenCountingService;
     }
 
 
     @Override
     public AiResponse generate(AiRequest request) {
+
+        int estimatedToken = tokenCountingService.estimateConversationTokens(
+                request.getHistory(),
+                request.getNewMessage(),
+                request.getSummary()
+        );
+
+        System.out.println("estimatedToken = " + estimatedToken);
 
         List<AiProvider> supportingProviders = aiProvider.stream().filter(
                 provider -> provider.supports(request.getModelName())).toList();
@@ -32,11 +43,33 @@ public class AiRouterService implements AiRouter{
             throw new ModelNotSupportedException("No provider supports model: " + request.getModelName());
         }
 
+        List<AiProvider> capableProviders = supportingProviders.stream()
+                .filter(provider -> {
+                    int maxToken = provider.getCapabilities().getMaxTokensPerRequest();
+                    boolean canHandle = estimatedToken < maxToken * 0.9;
+
+                    if (!canHandle) {
+                        System.out.println("Skipping " + provider.getCapabilities() + " needs " + estimatedToken + " token, max is " + maxToken);
+                    }
+
+                    return canHandle;
+                })
+                .toList();
+
+        if  (capableProviders.isEmpty()) {
+            throw new AllProvidersFailedException("No provider can handle " + estimatedToken + " tokens. " + "Maximum supported: " + supportingProviders.stream()
+                    .mapToInt(p -> p.getCapabilities().getMaxTokensPerRequest())
+                    .max().orElse(0)
+            );
+        }
+
+
+
 
         // Manual Mode
 
         if (request.getSelectionMode() == SelectionMode.USER_SELECTED) {
-            AiProvider provider = supportingProviders.get(0);
+            AiProvider provider = capableProviders.get(0);
 
             if (!provider.isAvailable()) {
                 throw new ModelUnavailableException("Selected model currently unavailable");
@@ -66,11 +99,13 @@ public class AiRouterService implements AiRouter{
         boolean fallbackUsed = false;
         int maxRetriesPerProvider = 1;
 
-        for (AiProvider currentProvider: supportingProviders) {
+        for (AiProvider currentProvider: capableProviders) {
             if (!currentProvider.isAvailable()) {
                 fallbackUsed = true;
                 continue;
             }
+
+            System.out.println("Trying " + currentProvider.getCapabilities() + " can handle " + currentProvider.getCapabilities().getMaxTokensPerRequest() + " tokens.");
 
             for (int attempt = 0; attempt <= maxRetriesPerProvider; attempt++) {
 

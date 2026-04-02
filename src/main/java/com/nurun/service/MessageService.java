@@ -53,8 +53,8 @@ public class MessageService {
             throw new IllegalArgumentException("Message cannot be empty");
         }
 
-        if (content.length() > 10000) {
-            throw new IllegalArgumentException("Message is too long. Please keep it under 10,000 characters.");
+        if (content.length() > 30000) {
+            throw new IllegalArgumentException("Message is too long. Please keep it under 30,000 characters.");
         }
 
 

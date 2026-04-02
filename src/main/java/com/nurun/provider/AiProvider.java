@@ -11,4 +11,6 @@ public interface AiProvider {
     boolean supports(String modelName);
     boolean isAvailable();
     void markUnavailable();
+
+    ProviderCapabilities getCapabilities();
 }
