@@ -1,3 +1,30 @@
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  .dark {
+    color-scheme: dark;
+  }
+
+  body {
+    font-family: "Plus Jakarta Sans", "Segoe UI", sans-serif;
+    background-color: #f8fafc;
+    color: #0f172a;
+  }
+
+  .dark body {
+    background-color: #0f172a;
+    color: #e2e8f0;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+}

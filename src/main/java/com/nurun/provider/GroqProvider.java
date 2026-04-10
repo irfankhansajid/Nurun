@@ -22,10 +22,10 @@ public class GroqProvider implements AiProvider{
 
     private volatile boolean available = true;
 
-    @Value("${groq.api-key}")
+    @Value("${groq.api-key:}")
     private String apiKey;
 
-    @Value("${groq.url}")
+    @Value("${groq.url:https://api.groq.com/openai/v1/chat/completions}")
     private String url;
 
     private final RestClient restClient = RestClient.create();

@@ -19,7 +19,7 @@ public class GeminiProvider implements AiProvider {
 
     private volatile boolean available = true;
 
-    @Value("${gemini.api-key}")
+    @Value("${gemini.api-key:}")
     private String apiKey;
 
 

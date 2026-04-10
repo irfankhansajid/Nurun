@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: "class",
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -13,10 +14,9 @@ export default {
         'brand-gray': '#F2F2F2',
       },
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
+        sans: ["Plus Jakarta Sans", "Segoe UI", "sans-serif"],
       },
     },
   },
   plugins: [],
 }
-

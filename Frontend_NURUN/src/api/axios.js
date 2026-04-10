@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const baseUrl = "http://localhost:8080";
+const baseUrl = import.meta.env.VITE_API_URL || "";
 
 const api = axios.create({
   baseURL: baseUrl,
@@ -13,7 +13,11 @@ const api = axios.create({
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-  if (token) {
+  const requestUrl = config.url || "";
+
+  const isAuthEndPoint = requestUrl.startsWith("/api/auth/");
+
+  if (token && !isAuthEndPoint) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
@@ -21,15 +25,26 @@ api.interceptors.request.use((config) => {
 
 
 api.interceptors.response.use(
-    (response) => {
-      return response;
-    },
+    (response) => response,
+
     (error) => {
-      if (error.response && error.response.status === 401) {
+      const status = error?.response?.status;
+      const requestUrl = error?.config?.url || "";
+      const isAuthEndpoint = requestUrl.startsWith("/api/auth/");
+
+
+      if (status === 401) {
+
+        if (isAuthEndpoint) {
+          return Promise.reject(error);
+        }
         console.warn("Unauthorized! Token expired or invalid. Logging out...");
 
         localStorage.removeItem("token");
-        window.location.href = "/login";
+
+        if (window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
       }
       return Promise.reject(error);
     }

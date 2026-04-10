@@ -2,6 +2,7 @@ package com.nurun.service;
 
 import com.nurun.dto.ConversationSummaryDto;
 import com.nurun.dto.MessageResponseDto;
+import com.nurun.dto.UpdateConversationTitleRequestDto;
 import com.nurun.exception.ResourceNotFoundException;
 import com.nurun.model.Conversation;
 import com.nurun.repository.ConversationRepository;
@@ -47,12 +48,8 @@ public class ConversationService {
     public List<MessageResponseDto> getConversationById(Long conversationId) {
         Long userId = getCurrentUserId();
 
-        Conversation conversation = conversationRepository.findById(conversationId)
+        Conversation conversation = conversationRepository.findByIdAndUserId(conversationId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Conversation with id not found " + conversationId));
-
-        if (!userId.equals(conversation.getUser().getId())) {
-            throw new RuntimeException("forbidden access");
-        }
 
         return conversation.getMessageList().stream()
                 .map(msg -> MessageResponseDto.builder()
@@ -65,6 +62,33 @@ public class ConversationService {
                         .providerUsed(msg.getProviderUsed()).conversationId(conversationId)
                         .build())
                 .toList();
+    }
+
+    @Transactional
+    public ConversationSummaryDto updateConversationTitle(Long conversationId, UpdateConversationTitleRequestDto requestDto) {
+        Long userId = getCurrentUserId();
+
+        Conversation conversation = conversationRepository.findByIdAndUserId(conversationId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Conversation with id not found " + conversationId));
+
+        conversation.setTitle(requestDto.getTitle().trim());
+        Conversation updated = conversationRepository.save(conversation);
+
+        return ConversationSummaryDto.builder()
+                .id(updated.getId())
+                .title(updated.getTitle())
+                .createdAt(updated.getCreatedAt())
+                .build();
+    }
+
+    @Transactional
+    public void deleteConversation(Long conversationId) {
+        Long userId = getCurrentUserId();
+
+        Conversation conversation = conversationRepository.findByIdAndUserId(conversationId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Conversation with id not found " + conversationId));
+
+        conversationRepository.delete(conversation);
     }
 
 }
