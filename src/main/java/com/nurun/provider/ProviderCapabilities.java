@@ -11,5 +11,7 @@ public class ProviderCapabilities {
     private final int maxTokensPerRequest;
     private final int maxTokensPerMinute;
     private final int averageLatencyMs;
+    private final int costScore;
+    private final int priority;
 
 }

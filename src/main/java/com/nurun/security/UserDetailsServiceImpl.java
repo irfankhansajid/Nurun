@@ -2,9 +2,7 @@ package com.nurun.security;
 
 
 import com.nurun.repository.UserRepository;
-
-
-import org.jspecify.annotations.NonNull;
+import jakarta.annotation.Nonnull;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -20,7 +18,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     }
 
     @Override
-    public UserDetails loadUserByUsername(@NonNull String idOrEmail) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(@Nonnull String idOrEmail) throws UsernameNotFoundException {
 
         try {
             Long id = Long.parseLong(idOrEmail);

@@ -4,6 +4,7 @@ import com.nurun.enumlist.MessageRole;
 import com.nurun.exception.RateLimitException;
 import com.nurun.model.Message;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
@@ -15,8 +16,13 @@ import java.util.Map;
 import java.util.Set;
 
 @Service
-@Order(1)
-
+@Order(2)
+@ConditionalOnProperty(
+        prefix = "provider",
+        name = "groq-mode",
+        havingValue = "MANUAL",
+        matchIfMissing = true
+)
 public class GroqProvider implements AiProvider{
 
 
